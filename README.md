@@ -1,0 +1,1 @@
+# django-validated-jsonfield

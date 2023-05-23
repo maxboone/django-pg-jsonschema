@@ -1,0 +1,19 @@
+[tool.poetry]
+name = "django-pg-jsonschema"
+version = "0.1.0"
+description = "Django-implementation for PostgreSQL JSONSchema"
+authors = ["Max Boone <m.boone@liacs.leidenuniv.nl>"]
+license = "MIT"
+readme = "README.md"
+packages = [{include = "django_pg_jsonschema"}]
+
+[tool.poetry.dependencies]
+python = "^3.8"
+django = "^3.2"
+
+[tool.poetry.group.dev.dependencies]
+black = "^23.3.0"
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"

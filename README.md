@@ -1,11 +1,11 @@
 # Django PostgreSQL JSONSchema
 
 Django PostgreSQL JSONSchema is a package that provides an extension to
-Django's PostgreSQL JSONField, by adding support and functions for PostgreSQL 
+Django's PostgreSQL JSONField, by adding support and functions for PostgreSQL
 installations with [`pg_jsonschema`](https://github.com/supabase/pg_jsonschema).
 
 This allows developers to store data in a JSONField, while running validation
-over the field and having the ability to generate forms for these model fields. 
+over the field and having the ability to generate forms for these model fields.
 
 ## Features
 
@@ -25,12 +25,12 @@ pip install django-pg-jsonschema
 
 ## Usage
 
-1. Add `'pg_jsonschema'` to your Django project's `INSTALLED_APPS` in the settings module.
+1. Add `'django_pg_jsonschema'` to your Django project's `INSTALLED_APPS` in the settings module.
 
 2. Import the `JSONField` from the package:
 
    ```python
-   from pg_jsonschema.fields import JSONField
+   from django_pg_jsonschema.fields import JSONField
    ```
 
 3. In your Django model, define a field of type `JSONField` with an optional `schema` argument specifying the JSON schema:

@@ -5,7 +5,7 @@ description = "Django-implementation for PostgreSQL JSONSchema"
 authors = ["Max Boone <m.boone@liacs.leidenuniv.nl>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "django_pg_jsonschema"}]
+packages = [{ include = "django_pg_jsonschema" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"

@@ -38,12 +38,18 @@ class JSONSchemaField(JSONField):
 
     # Database validation, if this is False, we validate
     # the schema in python instead of the database level
-    database_validation = True
+    check_schema_in_db = True
     validator = None
 
-    def __init__(self, schema=None, *args, **kwargs):
+    def __init__(self, schema=None, check_schema_in_db=True, *args, **kwargs):
         if not schema:
             raise TypeError("Schema was not passed to JSONSchemaField")
+
+        if not isinstance(check_schema_in_db, bool):
+            raise TypeError("Given check_schema_in_db argument is not a boolean")
+
+        # Set flag to commit the check to DB on migrations
+        self.check_schema_in_db = check_schema_in_db
 
         # Create a validator object using the JSONSchema
         self.validator = self.create_validator(schema)
@@ -60,6 +66,7 @@ class JSONSchemaField(JSONField):
 
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
+        kwargs["check_schema_in_db"] = self.check_schema_in_db
         if self.validator:
             kwargs["schema"] = self.validator.schema
         return name, path, args, kwargs
@@ -69,7 +76,7 @@ class JSONSchemaField(JSONField):
 
         databases = kwargs.get("databases") or []
         for db in databases:
-            if self.database_validation:
+            if self.check_schema_in_db:
                 errors.extend(self._check_jsonschema_supported(db))
 
         return errors

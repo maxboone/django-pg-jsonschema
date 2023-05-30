@@ -1,5 +1,6 @@
 from django.test import TestCase
 from tests.models import JSONSchemaFieldModel
+import pytest
 
 class JSONSchemaFieldTests(TestCase):
     def setUp(self):

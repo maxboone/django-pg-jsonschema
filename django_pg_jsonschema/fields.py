@@ -1,6 +1,7 @@
 import json
 
-import logging
+
+from django_pg_jsonschema.sql import PG_JSONSCHEMA_LOOKUP
 
 from django import forms
 from django.db import connections, router
@@ -12,15 +13,6 @@ from jsonschema import Validator
 from jsonschema.validators import validator_for
 
 __all__ = ["JSONSchemaField"]
-
-PG_JSONSCHEMA_LOOKUP = """
-    SELECT EXISTS(
-        SELECT 1
-        FROM pg_available_extensions
-        WHERE name = 'pg_jsonschema'
-        AND installed_version IS NOT NULL
-    );
-"""
 
 
 class JSONSchemaField(JSONField):
@@ -103,9 +95,33 @@ class JSONSchemaField(JSONField):
             ]
 
         # Check if the connection backend supports JSONSchema
-        if result := connection.cursor().execute(PG_JSONSCHEMA_LOOKUP):
-            logging.debug(result)
-            return []
+        # probably best to spilt this off to a different file
+        # in the future.
+        if self.check_schema_in_db:
+            cursor = connection.cursor()
+            cursor.execute(PG_JSONSCHEMA_LOOKUP)
+            result = cursor.fetchone()
+
+            # There's a result, so it's installed
+            if result and len(result) == 2:
+                if result[1]:
+                    return []
+
+                return [
+                    checks.Warning(
+                        f"pg_jsonschema { result[0] } installed in DB but not enabled",
+                        obj=self.model,
+                        id="django_pg_jsonschema.PG_JSONSCHEMA_NOT_ENABLED"
+                    )
+                ]
+
+            return [
+                checks.Warning(
+                    "pg_jsonschema not installed in DB",
+                    obj=self.model,
+                    id="django_pg_jsonschema.PG_JSONSCHEMA_NOT_FOUND"
+                )
+            ]
 
         return []
 

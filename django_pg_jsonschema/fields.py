@@ -57,41 +57,15 @@ class JSONSchemaField(JSONField):
             kwargs["schema"] = self.schema
         return name, path, args, kwargs
 
-
-    def get_internal_type(self):
-        # Default Django DB type is JSONField, and
-        # the check-function handles if we support
-        # the database backend. If necessary, it is
-        # possible to override the db_type function.
-        return "JSONField"
-
     def check(self, **kwargs):
         errors = super().check(**kwargs)
+
         databases = kwargs.get("databases") or []
         for db in databases:
-            errors.extend(self._check_json_supported(db))
             if self.database_validation:
                 errors.extend(self._check_jsonschema_supported(db))
 
         return errors
-
-    def _check_json_supported(self, db):
-        # Check if the model needs migration for this database
-        if not router.allow_migrate_model(db, self.model):
-            return []
-
-        # Get the current connection for the migration
-        connection = connections[db]
-
-        # Check if the connection backend supports JSON
-        if not (connection.features.supports_json_field):
-            return [
-                checks.Error(
-                    "%s does not support JSONFields." % connection.display_name,
-                    obj=self.model,
-                    id="fields.E180",
-                )
-            ]
 
     def _check_jsonschema_supported(self, db):
         # Check if the model needs migration for this database

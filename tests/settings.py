@@ -4,6 +4,7 @@ INSTALLED_APPS = (
     "django_pg_jsonschema",
     "tests",
 )
+
 DATABASES = {
     "default": {
         "ENGINE": "django.db.backends.postgresql_psycopg2",

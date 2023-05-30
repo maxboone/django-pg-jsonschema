@@ -40,6 +40,7 @@ class JSONSchemaField(JSONField):
     # the schema in python instead of the database level
     check_schema_in_db = True
     validator = None
+    validator_schema = None
 
     def __init__(self, schema=None, check_schema_in_db=True, *args, **kwargs):
         if not schema:
@@ -53,6 +54,7 @@ class JSONSchemaField(JSONField):
 
         # Create a validator object using the JSONSchema
         self.validator = self.create_validator(schema)
+        self.validator_schema = schema
 
         # Pass everything up to the JSONField
         super().__init__(*args, **kwargs)
@@ -67,8 +69,8 @@ class JSONSchemaField(JSONField):
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
         kwargs["check_schema_in_db"] = self.check_schema_in_db
-        if self.validator:
-            kwargs["schema"] = self.validator.schema
+        if self.validator and self.validator_schema:
+            kwargs["schema"] = self.validator_schema
         return name, path, args, kwargs
 
     def check(self, **kwargs):
@@ -133,7 +135,6 @@ class JSONSchemaField(JSONField):
         elif hasattr(value, "as_sql"):
             return value
 
-        # Use native functionality for Django 4.2
         if hasattr(connection.ops, "adapt_json_value"):
             return connection.ops.adapt_json_value(value)
 

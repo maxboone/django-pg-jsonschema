@@ -10,6 +10,7 @@ packages = [{ include = "django_pg_jsonschema" }]
 [tool.poetry.dependencies]
 python = "^3.8"
 django = "^3.2"
+jsonschema = "^4.17.3"
 
 [tool.poetry.group.dev.dependencies]
 black = "^23.3.0"

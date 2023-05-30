@@ -3,10 +3,11 @@ import json
 import logging
 
 from django import forms
-from django.core import checks, exceptions
 from django.db import connections, router
 from django.db.models import JSONField, expressions
 from django.utils.translation import gettext_lazy as _
+from django.core import checks, exceptions
+
 from jsonschema import Validator
 from jsonschema.validators import validator_for
 

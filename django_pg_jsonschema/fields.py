@@ -1,9 +1,10 @@
 from django import forms
 from django.core import checks
 from django.db import connections, router
-from django.db.models import Field
+from django.db.models import expressions, Field
 from django.db.models.fields.mixins import CheckFieldDefaultMixin
 from django.utils.translation import gettext_lazy as _
+import json
 
 __all__ = [
     "JSONSchemaField"
@@ -102,3 +103,31 @@ class JSONSchemaField(CheckFieldDefaultMixin, Field):
                 **kwargs,
             }
         )
+
+    def get_prep_value(self, value):
+        return super().get_prep_value(value)
+
+
+    def get_db_prep_value(self, value, connection, prepared=False):
+        # Keep up to spec with the Django Field definitions
+        value = super().get_db_prep_value(value, connection, prepared)
+        if not prepared:
+            value = self.get_prep_value(value)
+
+        # If the passed value is part of a value expression (Django)
+        # we'll need to unpack it first.
+        if (
+            isinstance(value, expressions.Value)
+            and isinstance(value.output_field, JSONSchemaField)
+        ):
+            value = value.value
+        # If the raw SQL is given, push that to the database.
+        elif hasattr(value, "as_sql"):
+            return value
+
+        # Use native functionality for Django 4.2
+        if hasattr(connection.ops, 'adapt_json_value'):
+            return connection.ops.adapt_json_value(value)
+
+        return json.dumps(value)
+

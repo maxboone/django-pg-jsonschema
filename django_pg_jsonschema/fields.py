@@ -1,5 +1,7 @@
 import json
 
+import logging
+
 from django import forms
 from django.core import checks, exceptions
 from django.db import connections, router
@@ -25,6 +27,7 @@ class JSONSchemaField(JSONField):
     default_error_messages = {
         "invalid": _("Value must be valid JSON."),
         "invalid_schema": _("Schema must be valid JSON Schema"),
+        "invalid_object": _("Object does not adhere to JSON Schema")
     }
 
     # JSON Field can not be empty
@@ -36,25 +39,29 @@ class JSONSchemaField(JSONField):
     # Database validation, if this is False, we validate
     # the schema in python instead of the database level
     database_validation = True
-    schema = None
+    validator = None
 
     def __init__(self, schema=None, *args, **kwargs):
         if not schema:
             raise TypeError("Schema was not passed to JSONSchemaField")
 
-        # Check if the given schema is valid, if so,
-        # we set the schema to the given schema.
-        _validator: Validator = validator_for(schema)
-        _validator.check_schema(schema)
-        self.schema = schema
+        # Create a validator object using the JSONSchema
+        self.validator = self.create_validator(schema)
 
         # Pass everything up to the JSONField
         super().__init__(*args, **kwargs)
 
+    def create_validator(self, schema) -> Validator:
+        # Check if the given schema is valid, if so,
+        # we set the schema to the given schema.
+        validator: Validator = validator_for(schema)
+        validator.check_schema(schema)
+        return validator
+
     def deconstruct(self):
         name, path, args, kwargs = super().deconstruct()
-        if self.schema:
-            kwargs["schema"] = self.schema
+        if self.validator:
+            kwargs["schema"] = self.validator.schema
         return name, path, args, kwargs
 
     def check(self, **kwargs):
@@ -87,7 +94,7 @@ class JSONSchemaField(JSONField):
 
         # Check if the connection backend supports JSONSchema
         if result := connection.cursor().execute(PG_JSONSCHEMA_LOOKUP):
-            print(result)
+            logging.debug(result)
             return []
 
         return []
@@ -126,16 +133,13 @@ class JSONSchemaField(JSONField):
         return json.dumps(value)
 
     def validate(self, value, model_instance):
-        #
-        #
-        #
-
-        super().validate(value, model_instance)
         try:
-            json.dumps(value, cls=self.encoder)
+            self.validator.validate(value)
         except TypeError:
             raise exceptions.ValidationError(
-                self.error_messages["invalid"],
-                code="invalid",
-                params={"value": value},
+                self.error_messages["invalid_object"],
+                code="invalid_object",
+                params={"value": value}
             )
+
+        super().validate(value, model_instance)

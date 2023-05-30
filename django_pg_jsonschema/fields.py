@@ -1,11 +1,12 @@
 import json
 
 from django import forms
-from django.core import checks
+from django.core import checks, exceptions
 from django.db import connections, router
-from django.db.models import Field, expressions
-from django.db.models.fields.mixins import CheckFieldDefaultMixin
+from django.db.models import JSONField, expressions
 from django.utils.translation import gettext_lazy as _
+from jsonschema import Validator
+from jsonschema.validators import validator_for
 
 __all__ = ["JSONSchemaField"]
 
@@ -19,7 +20,7 @@ PG_JSONSCHEMA_LOOKUP = """
 """
 
 
-class JSONSchemaField(CheckFieldDefaultMixin, Field):
+class JSONSchemaField(JSONField):
     description = _("A JSON object with JSON Schema")
     default_error_messages = {
         "invalid": _("Value must be valid JSON."),
@@ -35,6 +36,27 @@ class JSONSchemaField(CheckFieldDefaultMixin, Field):
     # Database validation, if this is False, we validate
     # the schema in python instead of the database level
     database_validation = True
+    schema = None
+
+    def __init__(self, schema=None, *args, **kwargs):
+        if not schema:
+            raise TypeError("Schema was not passed to JSONSchemaField")
+
+        # Check if the given schema is valid, if so,
+        # we set the schema to the given schema.
+        _validator: Validator = validator_for(schema)
+        _validator.check_schema(schema)
+        self.schema = schema
+
+        # Pass everything up to the JSONField
+        super().__init__(*args, **kwargs)
+
+    def deconstruct(self):
+        name, path, args, kwargs = super().deconstruct()
+        if self.schema:
+            kwargs["schema"] = self.schema
+        return name, path, args, kwargs
+
 
     def get_internal_type(self):
         # Default Django DB type is JSONField, and
@@ -128,3 +150,18 @@ class JSONSchemaField(CheckFieldDefaultMixin, Field):
             return connection.ops.adapt_json_value(value)
 
         return json.dumps(value)
+
+    def validate(self, value, model_instance):
+        #
+        #
+        #
+
+        super().validate(value, model_instance)
+        try:
+            json.dumps(value, cls=self.encoder)
+        except TypeError:
+            raise exceptions.ValidationError(
+                self.error_messages["invalid"],
+                code="invalid",
+                params={"value": value},
+            )

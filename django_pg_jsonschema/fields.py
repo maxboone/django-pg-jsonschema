@@ -1,23 +1,23 @@
+import json
+
 from django import forms
 from django.core import checks
 from django.db import connections, router
-from django.db.models import expressions, Field
+from django.db.models import Field, expressions
 from django.db.models.fields.mixins import CheckFieldDefaultMixin
 from django.utils.translation import gettext_lazy as _
-import json
 
-__all__ = [
-    "JSONSchemaField"
-]
+__all__ = ["JSONSchemaField"]
 
-PG_JSONSCHEMA_LOOKUP = '''
+PG_JSONSCHEMA_LOOKUP = """
     SELECT EXISTS(
         SELECT 1
         FROM pg_available_extensions
         WHERE name = 'pg_jsonschema'
         AND installed_version IS NOT NULL
     );
-'''
+"""
+
 
 class JSONSchemaField(CheckFieldDefaultMixin, Field):
     description = _("A JSON object with JSON Schema")
@@ -80,12 +80,12 @@ class JSONSchemaField(CheckFieldDefaultMixin, Field):
         connection = connections[db]
 
         # Only PostgreSQL is currently supported for JSONSchema
-        if not (connection.vendor.lower() == 'postgresql'):
+        if not (connection.vendor.lower() == "postgresql"):
             return [
                 checks.Error(
                     "Database is not PostgreSQL",
                     obj=self.model,
-                    id="django_pg_jsonschema.NOT_PG"
+                    id="django_pg_jsonschema.NOT_PG",
                 )
             ]
 
@@ -107,7 +107,6 @@ class JSONSchemaField(CheckFieldDefaultMixin, Field):
     def get_prep_value(self, value):
         return super().get_prep_value(value)
 
-
     def get_db_prep_value(self, value, connection, prepared=False):
         # Keep up to spec with the Django Field definitions
         value = super().get_db_prep_value(value, connection, prepared)
@@ -116,9 +115,8 @@ class JSONSchemaField(CheckFieldDefaultMixin, Field):
 
         # If the passed value is part of a value expression (Django)
         # we'll need to unpack it first.
-        if (
-            isinstance(value, expressions.Value)
-            and isinstance(value.output_field, JSONSchemaField)
+        if isinstance(value, expressions.Value) and isinstance(
+            value.output_field, JSONSchemaField
         ):
             value = value.value
         # If the raw SQL is given, push that to the database.
@@ -126,8 +124,7 @@ class JSONSchemaField(CheckFieldDefaultMixin, Field):
             return value
 
         # Use native functionality for Django 4.2
-        if hasattr(connection.ops, 'adapt_json_value'):
+        if hasattr(connection.ops, "adapt_json_value"):
             return connection.ops.adapt_json_value(value)
 
         return json.dumps(value)
-

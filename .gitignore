@@ -12,3 +12,4 @@ docs/_build/
 .eggs/
 .venv/
 coverage.xml
+.env

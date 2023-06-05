@@ -1,15 +1,15 @@
 [tool.poetry]
 name = "django-pg-jsonschema"
-version = "0.1.0"
+version = "0.1.1"
 description = "Django-implementation for PostgreSQL JSONSchema"
 authors = ["Max Boone <m.boone@liacs.leidenuniv.nl>"]
-license = "MIT"
+license = "Apache 2.0"
 readme = "README.md"
 packages = [{ include = "django_pg_jsonschema" }]
 
 [tool.poetry.dependencies]
 python = "^3.8"
-django = "^3.2"
+django = ">=3.2,<4.3"
 jsonschema = "^4.17.3"
 
 [tool.poetry.group.dev.dependencies]

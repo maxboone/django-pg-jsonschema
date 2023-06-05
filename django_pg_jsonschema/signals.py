@@ -20,13 +20,6 @@ def ensure_model_constraints(model: Model, using: str = "default"):
                 schemas[field.db_column or field.name] = field.validator_schema
 
     for column, schema in schemas.items():
-        print(
-            PG_JSONSCHEMA_CONSTRAINT.format(
-                    table=model._meta.db_table,
-                    column=column,
-                    schema=json.dumps(schema),
-                )
-        )
         with connection.cursor() as cursor:
             cursor.execute(
                 PG_JSONSCHEMA_CONSTRAINT.format(

@@ -31,7 +31,8 @@ class JSONSchemaField(JSONField):
 
     # Database validation, if this is False, we validate
     # the schema in python instead of the database level
-    check_schema_in_db = True
+    check_schema_in_db = False
+
     validator = None
     validator_schema = None
 
@@ -152,6 +153,8 @@ class JSONSchemaField(JSONField):
         elif hasattr(value, "as_sql"):
             return value
 
+        # adapt_json_value added in Django 4.1, add this
+        # conditional for compat with older versions
         if hasattr(connection.ops, "adapt_json_value"):
             return connection.ops.adapt_json_value(value)
 

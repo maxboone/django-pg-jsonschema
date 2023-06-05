@@ -2,6 +2,7 @@ import json
 
 
 from django_pg_jsonschema.sql import PG_JSONSCHEMA_LOOKUP
+from django_pg_jsonschema.configuration import PG_COMMIT_JSONSCHEMA
 
 from django import forms
 from django.db import connections, router
@@ -31,7 +32,7 @@ class JSONSchemaField(JSONField):
 
     # Database validation, if this is False, we validate
     # the schema in python instead of the database level
-    check_schema_in_db = False
+    check_schema_in_db = PG_COMMIT_JSONSCHEMA
 
     validator = None
     validator_schema = None

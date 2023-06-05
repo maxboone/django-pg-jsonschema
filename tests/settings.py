@@ -26,3 +26,7 @@ CACHES = {
 DEFAULT_AUTO_FIELD = "django.db.models.AutoField"
 
 USE_TZ = False
+
+DJANGO_PG_JSONSCHEMA = {
+    'PG_COMMIT_JSONSCHEMA': True
+}

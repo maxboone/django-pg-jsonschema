@@ -12,6 +12,7 @@ from django.core import checks, exceptions
 
 from jsonschema import Validator
 from jsonschema.validators import validator_for
+from typing import Type
 
 __all__ = ["JSONSchemaField"]
 
@@ -57,8 +58,9 @@ class JSONSchemaField(JSONField):
     def create_validator(self, schema) -> Validator:
         # Check if the given schema is valid, if so,
         # we set the schema to the given schema.
-        validator: Validator = validator_for(schema)
+        validator: Type[Validator] = validator_for(schema)
         validator.check_schema(schema)
+        validator: Validator = validator(schema)
         return validator
 
     def deconstruct(self):
@@ -135,12 +137,23 @@ class JSONSchemaField(JSONField):
             }
         )
 
+    def _validate(self, value):
+        try:
+            self.validator.validate(value)
+        except TypeError:
+            raise exceptions.ValidationError(
+                self.error_messages["invalid_object"],
+                code="invalid_object",
+                params={"value": value}
+            )
+
     def get_prep_value(self, value):
-        return super().get_prep_value(value)
+        return value
 
     def get_db_prep_value(self, value, connection, prepared=False):
+        self._validate(value)
+
         # Keep up to spec with the Django Field definitions
-        value = super().get_db_prep_value(value, connection, prepared)
         if not prepared:
             value = self.get_prep_value(value)
 
@@ -162,13 +175,5 @@ class JSONSchemaField(JSONField):
         return json.dumps(value)
 
     def validate(self, value, model_instance):
-        try:
-            self.validator.validate(value)
-        except TypeError:
-            raise exceptions.ValidationError(
-                self.error_messages["invalid_object"],
-                code="invalid_object",
-                params={"value": value}
-            )
-
+        self._validate(value)
         super().validate(value, model_instance)

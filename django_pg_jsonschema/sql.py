@@ -15,7 +15,7 @@ PG_JSONSCHEMA_CONSTRAINT = """
             '{schema}',
             {column}
         )
-    );
+    ) NOT VALID;
 
     COMMIT;
 """

@@ -1,9 +1,42 @@
 from django.test import TestCase
-from tests.models import JSONSchemaFieldModel
+from django.db import IntegrityError
+from jsonschema.exceptions import ValidationError
+from tests.models import SingleDBModel, SinglePythonModel
+from pytest import raises
 
-class JSONSchemaFieldTests(TestCase):
-    def setUp(self):
-        self.model = JSONSchemaFieldModel.objects.create()
 
-    def test_true(self):
-        self.assertEqual(1, 1)
+class JSONSchemaFieldDBTests(TestCase):
+    def test_object_required(self):
+        SingleDBModel.objects.create(data={"name": "hello"})
+
+    def test_object_optional(self):
+        SingleDBModel.objects.create(data={"name": "hello", "optional": 1})
+
+    def test_object_missing(self):
+        with raises(IntegrityError):
+            SingleDBModel.objects.create(data={})
+
+    def test_object_mistyped(self):
+        with raises(IntegrityError):
+            SingleDBModel.objects.create(data={
+                "name": "hello",
+                "optional": "string"
+            })
+
+class JSONSchemaFieldPythonTests(TestCase):
+    def test_object_required(self):
+        SinglePythonModel.objects.create(data={"name": "hello"})
+
+    def test_object_optional(self):
+        SinglePythonModel.objects.create(data={"name": "hello", "optional": 1})
+
+    def test_object_missing(self):
+        with raises(ValidationError):
+            SinglePythonModel.objects.create(data={})
+
+    def test_object_mistyped(self):
+        with raises(ValidationError):
+            SinglePythonModel.objects.create(data={
+                "name": "hello",
+                "optional": "string"
+            })

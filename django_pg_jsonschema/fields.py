@@ -22,7 +22,7 @@ class JSONSchemaField(JSONField):
     default_error_messages = {
         "invalid": _("Value must be valid JSON."),
         "invalid_schema": _("Schema must be valid JSON Schema"),
-        "invalid_object": _("Object does not adhere to JSON Schema")
+        "invalid_object": _("Object does not adhere to JSON Schema"),
     }
 
     # JSON Field can not be empty
@@ -33,12 +33,14 @@ class JSONSchemaField(JSONField):
 
     # Database validation, if this is False, we validate
     # the schema in python instead of the database level
-    check_schema_in_db = PG_COMMIT_JSONSCHEMA
+    check_schema_in_db = False
 
     validator = None
     validator_schema = None
 
-    def __init__(self, schema=None, check_schema_in_db=True, *args, **kwargs):
+    def __init__(
+        self, schema=None, check_schema_in_db=PG_COMMIT_JSONSCHEMA, *args, **kwargs
+    ):
         if not schema:
             raise TypeError("Schema was not passed to JSONSchemaField")
 
@@ -115,7 +117,7 @@ class JSONSchemaField(JSONField):
                     checks.Warning(
                         f"pg_jsonschema { result[0] } installed in DB but not enabled",
                         obj=self.model,
-                        id="django_pg_jsonschema.PG_JSONSCHEMA_NOT_ENABLED"
+                        id="django_pg_jsonschema.PG_JSONSCHEMA_NOT_ENABLED",
                     )
                 ]
 
@@ -123,7 +125,7 @@ class JSONSchemaField(JSONField):
                 checks.Warning(
                     "pg_jsonschema not installed in DB",
                     obj=self.model,
-                    id="django_pg_jsonschema.PG_JSONSCHEMA_NOT_FOUND"
+                    id="django_pg_jsonschema.PG_JSONSCHEMA_NOT_FOUND",
                 )
             ]
 
@@ -144,14 +146,15 @@ class JSONSchemaField(JSONField):
             raise exceptions.ValidationError(
                 self.error_messages["invalid_object"],
                 code="invalid_object",
-                params={"value": value}
+                params={"value": value},
             )
 
     def get_prep_value(self, value):
         return value
 
     def get_db_prep_value(self, value, connection, prepared=False):
-        self._validate(value)
+        if not self.check_schema_in_db:
+            self._validate(value)
 
         # Keep up to spec with the Django Field definitions
         if not prepared:
@@ -175,5 +178,8 @@ class JSONSchemaField(JSONField):
         return json.dumps(value)
 
     def validate(self, value, model_instance):
-        self._validate(value)
+        if self.check_schema_in_db:
+            self._validate(value)
+        else:
+            self._validate(value)
         super().validate(value, model_instance)

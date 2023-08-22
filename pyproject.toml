@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "django-pg-jsonschema"
-version = "0.1.1"
+version = "0.1.2"
 description = "Django-implementation for PostgreSQL JSONSchema"
 authors = ["Max Boone <m.boone@liacs.leidenuniv.nl>"]
 license = "Apache 2.0"

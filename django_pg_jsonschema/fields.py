@@ -173,7 +173,7 @@ class JSONSchemaField(JSONField):
         # adapt_json_value added in Django 4.1, add this
         # conditional for compat with older versions
         if hasattr(connection.ops, "adapt_json_value"):
-            return connection.ops.adapt_json_value(value)
+            return connection.ops.adapt_json_value(value, self.encoder)
 
         return json.dumps(value)
 
